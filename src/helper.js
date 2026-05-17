@@ -66,6 +66,20 @@ export async function checkAuth(cookie, path) {
     return false
 }
 
+export async function checkAdminAuth(cookie) {
+    const token = cookie['auth_admin']
+    if (token) {
+        const valid = await jwt.verify(token, SECRET)
+        if (valid) {
+            const payload = jwt.decode(token)
+            if (payload.role === 'admin') {
+                return true
+            }
+        }
+    }
+    return false
+}
+
 export async function checkPasswordFromRequest(request, storedPw) {
     if (!storedPw) return false
 

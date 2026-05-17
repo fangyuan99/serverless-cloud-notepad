@@ -2,8 +2,8 @@ import dayjs from 'dayjs'
 import { Router } from 'itty-router'
 import Cookies from 'cookie'
 import jwt from '@tsndr/cloudflare-worker-jwt'
-import { queryNote, MD5, checkAuth, checkPasswordFromRequest, genRandomStr, returnPage, returnJSON, saltPw, getI18n } from './helper'
-import { SECRET } from './constant'
+import { queryNote, MD5, checkAuth, checkAdminAuth, checkPasswordFromRequest, genRandomStr, returnPage, returnJSON, saltPw, getI18n } from './helper'
+import { SECRET, ADMIN_PASSWORD } from './constant'
 import { exportHandler, importHandler, webdavProxyHandler } from './backup'
 
 // init
@@ -33,6 +33,200 @@ router.get('/share/:md5', async (request) => {
 
     return returnPage('Page404', { lang, title: '404' })
 })
+
+// ==================== Admin Routes ====================
+
+router.get('/admin', async (request) => {
+    const lang = getI18n(request)
+    const cookie = Cookies.parse(request.headers.get('Cookie') || '')
+    const valid = await checkAdminAuth(cookie)
+    if (valid) {
+        return returnPage('AdminPage', { lang })
+    }
+    return returnPage('AdminLogin', { lang })
+})
+
+router.post('/admin/auth', async (request) => {
+    if (request.headers.get('Content-Type') === 'application/json') {
+        const { passwd } = await request.json()
+        if (passwd && ADMIN_PASSWORD && passwd === ADMIN_PASSWORD) {
+            const token = await jwt.sign({ role: 'admin' }, SECRET)
+            return returnJSON(0, { ok: true }, {
+                'Set-Cookie': Cookies.serialize('auth_admin', token, {
+                    path: '/',
+                    expires: dayjs().add(7, 'day').toDate(),
+                    httpOnly: true,
+                })
+            })
+        }
+    }
+    return returnJSON(10002, 'Admin auth failed!')
+})
+
+// Admin API middleware helper
+async function requireAdmin(request) {
+    const cookie = Cookies.parse(request.headers.get('Cookie') || '')
+    return await checkAdminAuth(cookie)
+}
+
+router.get('/admin/api/notes', async (request) => {
+    if (!await requireAdmin(request)) return returnJSON(10002, 'Unauthorized')
+
+    const url = new URL(request.url)
+    const cursor = url.searchParams.get('cursor') || undefined
+    const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 1000)
+    const isCount = url.searchParams.get('count') === 'true'
+
+    if (isCount) {
+        // Count all notes by iterating through all pages
+        let total = 0
+        let c = undefined
+        do {
+            const page = await NOTES.list({ cursor: c, limit: 1000 })
+            total += page.keys.length
+            c = page.list_complete ? undefined : page.cursor
+        } while (c)
+        return returnJSON(0, { total })
+    }
+
+    const result = await NOTES.list({ cursor, limit })
+    return returnJSON(0, {
+        keys: result.keys.map(k => ({
+            name: k.name,
+            metadata: k.metadata || {},
+        })),
+        cursor: result.cursor,
+        list_complete: result.list_complete,
+    })
+})
+
+router.get('/admin/api/notes/:path/preview', async (request) => {
+    if (!await requireAdmin(request)) return returnJSON(10002, 'Unauthorized')
+
+    const { path } = request.params
+    const { value, metadata } = await queryNote(path)
+    return returnJSON(0, {
+        content: value,
+        metadata,
+    })
+})
+
+router.delete('/admin/api/notes/:path', async (request) => {
+    if (!await requireAdmin(request)) return returnJSON(10002, 'Unauthorized')
+
+    const { path } = request.params
+    const { metadata } = await queryNote(path)
+
+    // Clean up share mapping if shared
+    if (metadata.share) {
+        const md5 = await MD5(path)
+        await SHARE.delete(md5)
+    }
+
+    await NOTES.delete(path)
+    return returnJSON(0)
+})
+
+router.post('/admin/api/notes/delete-batch', async (request) => {
+    if (!await requireAdmin(request)) return returnJSON(10002, 'Unauthorized')
+
+    if (request.headers.get('Content-Type') !== 'application/json') {
+        return returnJSON(10005, 'Invalid content type')
+    }
+
+    const { paths } = await request.json()
+    if (!Array.isArray(paths) || paths.length === 0) {
+        return returnJSON(10005, 'Invalid paths')
+    }
+
+    // Cap at 100 per request
+    const toDelete = paths.slice(0, 100)
+    let deleted = 0
+    const errors = []
+
+    for (const path of toDelete) {
+        try {
+            const { metadata } = await queryNote(path)
+            if (metadata.share) {
+                const md5 = await MD5(path)
+                await SHARE.delete(md5)
+            }
+            await NOTES.delete(path)
+            deleted++
+        } catch (err) {
+            errors.push({ path, error: err.message })
+        }
+    }
+
+    return returnJSON(0, { deleted, errors, total: toDelete.length })
+})
+
+router.get('/admin/api/export-all', async (request) => {
+    if (!await requireAdmin(request)) return returnJSON(10002, 'Unauthorized')
+
+    const allNotes = []
+    let cursor = undefined
+
+    do {
+        const page = await NOTES.list({ cursor, limit: 1000 })
+        for (const key of page.keys) {
+            const value = await NOTES.get(key.name)
+            allNotes.push({
+                path: key.name,
+                content: value || '',
+                metadata: key.metadata || {},
+            })
+        }
+        cursor = page.list_complete ? undefined : page.cursor
+    } while (cursor)
+
+    return returnJSON(0, {
+        version: 1,
+        app: 'serverless-cloud-notepad',
+        exportedAt: new Date().toISOString(),
+        notes: allNotes,
+        encrypted: false,
+    })
+})
+
+router.post('/admin/api/import-all', async (request) => {
+    if (!await requireAdmin(request)) return returnJSON(10002, 'Unauthorized')
+
+    if (request.headers.get('Content-Type') !== 'application/json') {
+        return returnJSON(10005, 'Invalid content type')
+    }
+
+    const body = await request.json()
+    const { notes } = body
+
+    if (!Array.isArray(notes) || notes.length === 0) {
+        return returnJSON(10005, 'Invalid import data')
+    }
+
+    let imported = 0
+    const errors = []
+
+    for (const note of notes) {
+        try {
+            if (!note.path) continue
+            const metadata = note.metadata || {}
+            await NOTES.put(note.path, note.content || '', { metadata })
+
+            // Restore share mapping if shared
+            if (metadata.share) {
+                const md5 = await MD5(note.path)
+                await SHARE.put(md5, note.path)
+            }
+            imported++
+        } catch (err) {
+            errors.push({ path: note.path, error: err.message })
+        }
+    }
+
+    return returnJSON(0, { imported, errors, total: notes.length })
+})
+
+// ==================== Note Routes ====================
 
 async function editHandler(request) {
     const lang = getI18n(request)
