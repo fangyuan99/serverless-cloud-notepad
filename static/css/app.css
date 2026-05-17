@@ -358,3 +358,193 @@ textarea:focus {
 .modal-body>input:hover {
     border-color: #3a86ffd4;
 }
+
+/* Backup Drawer */
+.backup-drawer-mask {
+    display: none;
+    position: fixed;
+    z-index: 9;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #00000040;
+}
+
+.backup-drawer-mask.open {
+    display: block;
+}
+
+.backup-drawer {
+    position: fixed;
+    z-index: 10;
+    top: 0;
+    right: 0;
+    width: 360px;
+    height: 100vh;
+    background: #fff;
+    box-shadow: -2px 0 8px rgba(0,0,0,0.15);
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.backup-drawer.open {
+    transform: translateX(0);
+}
+
+.drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.drawer-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.drawer-close {
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: bold;
+    color: #999;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+}
+
+.drawer-close:hover {
+    color: #333;
+}
+
+.drawer-section {
+    padding: 12px 20px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.drawer-section h4 {
+    margin: 0 0 10px 0;
+    font-size: 13px;
+    color: #666;
+    font-weight: 600;
+}
+
+.drawer-row {
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.drawer-input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    font-size: 13px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.drawer-input:focus {
+    border-color: #3a86ff;
+}
+
+.drawer-btn {
+    cursor: pointer;
+    padding: 6px 14px;
+    border-radius: 4px;
+    background: #3a86ff;
+    color: white;
+    border: none;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.drawer-btn:hover {
+    background: #3a86ffd4;
+}
+
+.drawer-btn:active {
+    background: #3275df;
+}
+
+.drawer-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.drawer-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #555;
+    cursor: pointer;
+    user-select: none;
+}
+
+.webdav-status {
+    font-size: 12px;
+    color: #999;
+    min-height: 16px;
+}
+
+.backup-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.backup-list-empty {
+    color: #ccc;
+    font-size: 13px;
+    text-align: center;
+    padding: 16px 0;
+}
+
+.backup-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f5f5f5;
+    font-size: 12px;
+}
+
+.backup-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.backup-item-name {
+    color: #333;
+    word-break: break-all;
+}
+
+.backup-item-meta {
+    color: #999;
+    margin-top: 2px;
+}
+
+.backup-item .drawer-btn {
+    padding: 3px 10px;
+    font-size: 12px;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+.opt-backup {
+    margin-left: 10px;
+}
+
+@media (max-width: 480px) {
+    .backup-drawer {
+        width: 100vw;
+    }
+}

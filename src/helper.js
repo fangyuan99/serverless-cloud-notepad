@@ -99,3 +99,20 @@ export function getI18n(request) {
     const acceptList = al.split(',').map(lang => lang.split(';')[0].trim())
     return acceptList.find(lang => Object.keys(SUPPORTED_LANG).includes(lang)) || DEFAULT_LANG
 }
+
+export function parsePropfindResponse(xmlText) {
+    const results = []
+    const responseRegex = /<(?:[a-zA-Z]+:)?response[^>]*>([\s\S]*?)<\/(?:[a-zA-Z]+:)?response>/gi
+    let match
+    while ((match = responseRegex.exec(xmlText)) !== null) {
+        const block = match[1]
+        const href = block.match(/<(?:[a-zA-Z]+:)?href[^>]*>([^<]+)<\/(?:[a-zA-Z]+:)?href>/i)?.[1] || ''
+        const lastMod = block.match(/<(?:[a-zA-Z]+:)?getlastmodified[^>]*>([^<]+)/i)?.[1] || ''
+        const size = block.match(/<(?:[a-zA-Z]+:)?getcontentlength[^>]*>([^<]+)/i)?.[1] || '0'
+        if (href && href.endsWith('.json')) {
+            const filename = decodeURIComponent(href.split('/').pop())
+            results.push({ filename, lastModified: lastMod, size: parseInt(size) })
+        }
+    }
+    return results.sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified))
+}

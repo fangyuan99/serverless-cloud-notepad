@@ -18,6 +18,7 @@ const FOOTER = ({ lang, isEdit, updateAt, pw, mode, share }) => `
                 <button class="opt-button opt-pw">${pw ? SUPPORTED_LANG[lang].changePW : SUPPORTED_LANG[lang].setPW}</button>
                 ${SWITCHER('Markdown', mode === 'md', 'opt-mode')}
                 ${SWITCHER(SUPPORTED_LANG[lang].share, share, 'opt-share')}
+                <button class="opt-button opt-backup">${SUPPORTED_LANG[lang].backup}</button>
             </div>
             ` : ''
     }
@@ -26,6 +27,77 @@ const FOOTER = ({ lang, isEdit, updateAt, pw, mode, share }) => `
         </a>
         ${updateAt ? `<span class="last-modified">${SUPPORTED_LANG[lang].lastModified} ${dayjs.unix(updateAt).fromNow()}</span>` : ''}
     </div>
+`
+const BACKUP_DRAWER = (lang) => `
+<div class="backup-drawer-mask"></div>
+<div class="backup-drawer">
+    <div class="drawer-header">
+        <h3>${SUPPORTED_LANG[lang].backup}</h3>
+        <span class="drawer-close">x</span>
+    </div>
+    <div class="drawer-section">
+        <h4>${SUPPORTED_LANG[lang].localBackup}</h4>
+        <div class="drawer-row">
+            <label class="drawer-checkbox-label">
+                <input type="checkbox" class="export-encrypt-check" />
+                <span>${SUPPORTED_LANG[lang].encrypt}</span>
+            </label>
+        </div>
+        <div class="drawer-row export-pw-row" style="display:none">
+            <input type="password" class="drawer-input export-pw-input" placeholder="${SUPPORTED_LANG[lang].encryptPw}" />
+        </div>
+        <div class="drawer-row">
+            <button class="drawer-btn export-btn">${SUPPORTED_LANG[lang].export_}</button>
+            <button class="drawer-btn import-btn">${SUPPORTED_LANG[lang].import_}</button>
+            <input type="file" class="import-file-input" accept=".json" style="display:none" />
+        </div>
+        <div class="drawer-row import-pw-row" style="display:none">
+            <input type="password" class="drawer-input import-pw-input" placeholder="${SUPPORTED_LANG[lang].encryptPw}" />
+            <button class="drawer-btn import-decrypt-btn">${SUPPORTED_LANG[lang].restore}</button>
+        </div>
+    </div>
+    <div class="drawer-section">
+        <h4>${SUPPORTED_LANG[lang].webdavConfig}</h4>
+        <div class="drawer-row">
+            <input type="text" class="drawer-input webdav-url" placeholder="${SUPPORTED_LANG[lang].webdavUrl}" />
+        </div>
+        <div class="drawer-row">
+            <input type="text" class="drawer-input webdav-username" placeholder="${SUPPORTED_LANG[lang].username}" />
+        </div>
+        <div class="drawer-row">
+            <input type="password" class="drawer-input webdav-password" placeholder="${SUPPORTED_LANG[lang].password}" />
+        </div>
+        <div class="drawer-row">
+            <input type="text" class="drawer-input webdav-basepath" placeholder="${SUPPORTED_LANG[lang].basePath}" value="/cloud-notepad/" />
+        </div>
+        <div class="drawer-row">
+            <button class="drawer-btn webdav-save-btn">${SUPPORTED_LANG[lang].saveConfig}</button>
+            <button class="drawer-btn webdav-test-btn">${SUPPORTED_LANG[lang].testConn}</button>
+        </div>
+        <div class="drawer-row webdav-status"></div>
+    </div>
+    <div class="drawer-section">
+        <h4>${SUPPORTED_LANG[lang].backupNow}</h4>
+        <div class="drawer-row">
+            <label class="drawer-checkbox-label">
+                <input type="checkbox" class="backup-encrypt-check" />
+                <span>${SUPPORTED_LANG[lang].encrypt}</span>
+            </label>
+        </div>
+        <div class="drawer-row backup-pw-row" style="display:none">
+            <input type="password" class="drawer-input backup-pw-input" placeholder="${SUPPORTED_LANG[lang].encryptPw}" />
+        </div>
+        <div class="drawer-row">
+            <button class="drawer-btn webdav-backup-btn">${SUPPORTED_LANG[lang].backupNow}</button>
+        </div>
+    </div>
+    <div class="drawer-section">
+        <h4>${SUPPORTED_LANG[lang].backupList}</h4>
+        <div class="backup-list">
+            <div class="backup-list-empty">${SUPPORTED_LANG[lang].noBackups}</div>
+        </div>
+    </div>
+</div>
 `
 const MODAL = lang => `
 <div class="modal share-modal">
@@ -67,6 +139,7 @@ const HTML = ({ lang, title, content, ext = {}, tips, isEdit, showPwPrompt }) =>
     </div>
     <div id="loading"></div>
     ${MODAL(lang)}
+    ${isEdit ? BACKUP_DRAWER(lang) : ''}
     ${FOOTER({ ...ext, isEdit, lang })}
     ${(ext.mode === 'md' || ext.share) ? `<script src="${CDN_PREFIX}/js/purify.min.js"></script>` : ''}
     ${ext.mode === 'md' ? `<script src="${CDN_PREFIX}/js/marked.min.js"></script>` : ''}

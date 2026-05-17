@@ -4,6 +4,7 @@ import Cookies from 'cookie'
 import jwt from '@tsndr/cloudflare-worker-jwt'
 import { queryNote, MD5, checkAuth, checkPasswordFromRequest, genRandomStr, returnPage, returnJSON, saltPw, getI18n } from './helper'
 import { SECRET } from './constant'
+import { exportHandler, importHandler, webdavProxyHandler } from './backup'
 
 // init
 const router = Router()
@@ -122,6 +123,10 @@ router.get('/m/:path', async (request) => {
         ext: { ...metadata, mode: 'md' },
     })
 })
+
+router.get('/:path/export', exportHandler)
+router.post('/:path/import', importHandler)
+router.post('/:path/webdav', webdavProxyHandler)
 
 router.get('/e/:path', editHandler)
 router.get('/:path', editHandler)
