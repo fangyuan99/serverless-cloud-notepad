@@ -108,8 +108,9 @@ router.get('/m/:path', async (request) => {
     const { value, metadata } = await queryNote(path)
 
     if (metadata.pw) {
-        const valid = await checkAuth(cookie, path)
-        if (!valid) {
+        const cookieValid = await checkAuth(cookie, path)
+        const passwordValid = cookieValid || await checkPasswordFromRequest(request, metadata.pw)
+        if (!passwordValid) {
             return returnPage('NeedPasswd', { lang, title })
         }
     }
