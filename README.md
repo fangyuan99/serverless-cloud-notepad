@@ -26,6 +26,19 @@ Powered by Cloudflare Workers、KV & Github Actions, Easy to deploy privately.
 
 - Enter `/any-custom-name-you-like` view/edit custom note.
 
+- URL prefixes select the view mode (same underlying note):
+  - `/<name>` or `/e/<name>` — editor (default)
+  - `/m/<name>` — read-only Markdown rendering
+  - `/r/<name>` — raw `text/plain` content, also usable from API/CLI
+
+For password-protected notes, `/r/<name>` accepts the password via header or query string:
+
+```bash
+curl https://note.example.com/r/abc                                       # public
+curl -H "Authorization: Bearer <password>" https://note.example.com/r/abc
+curl "https://note.example.com/r/abc?password=<password>"
+```
+
 Try it out! [https://note.src.moe/example](https://note.src.moe/example)
 
 > [!NOTE]

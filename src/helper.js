@@ -53,16 +53,36 @@ export async function saltPw(password) {
 }
 
 export async function checkAuth(cookie, path) {
-    if (cookie.auth) {
-        const valid = await jwt.verify(cookie.auth, SECRET)
+    const token = cookie[`auth_${path}`]
+    if (token) {
+        const valid = await jwt.verify(token, SECRET)
         if (valid) {
-            const payload = jwt.decode(cookie.auth)
+            const payload = jwt.decode(token)
             if (payload.path === path) {
                 return true
             }
         }
     }
     return false
+}
+
+export async function checkPasswordFromRequest(request, storedPw) {
+    if (!storedPw) return false
+
+    let supplied = null
+
+    const authz = request.headers.get('Authorization') || ''
+    const match = authz.match(/^Bearer\s+(.+)$/i)
+    if (match) supplied = match[1]
+
+    if (!supplied) {
+        const url = new URL(request.url)
+        supplied = url.searchParams.get('password')
+    }
+
+    if (!supplied) return false
+    const hashed = await saltPw(supplied)
+    return hashed === storedPw
 }
 
 export async function queryNote(key) {

@@ -79,5 +79,6 @@ const HTML = ({ lang, title, content, ext = {}, tips, isEdit, showPwPrompt }) =>
 
 export const Edit = data => HTML({ isEdit: true, ...data })
 export const Share = data => HTML(data)
+export const Markdown = data => HTML(data)
 export const NeedPasswd = data => HTML({ tips: SUPPORTED_LANG[data.lang].tipEncrypt, showPwPrompt: true, ...data })
 export const Page404 = data => HTML({ tips: SUPPORTED_LANG[data.lang].tip404, ...data })

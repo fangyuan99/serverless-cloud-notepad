@@ -2,7 +2,7 @@ import dayjs from 'dayjs'
 import { Router } from 'itty-router'
 import Cookies from 'cookie'
 import jwt from '@tsndr/cloudflare-worker-jwt'
-import { queryNote, MD5, checkAuth, genRandomStr, returnPage, returnJSON, saltPw, getI18n } from './helper'
+import { queryNote, MD5, checkAuth, checkPasswordFromRequest, genRandomStr, returnPage, returnJSON, saltPw, getI18n } from './helper'
 import { SECRET } from './constant'
 
 // init
@@ -33,7 +33,7 @@ router.get('/share/:md5', async (request) => {
     return returnPage('Page404', { lang, title: '404' })
 })
 
-router.get('/:path', async (request) => {
+async function editHandler(request) {
     const lang = getI18n(request)
 
     const { path } = request.params
@@ -63,7 +63,67 @@ router.get('/:path', async (request) => {
     }
 
     return returnPage('NeedPasswd', { lang, title })
+}
+
+router.get('/r/:path', async (request) => {
+    const { path } = request.params
+    const { value, metadata } = await queryNote(path)
+
+    if (!value && !metadata.pw) {
+        return new Response('Not Found', {
+            status: 404,
+            headers: { 'content-type': 'text/plain; charset=utf-8' },
+        })
+    }
+
+    if (metadata.pw) {
+        const cookie = Cookies.parse(request.headers.get('Cookie') || '')
+        const cookieValid = await checkAuth(cookie, path)
+        const passwordValid = cookieValid || await checkPasswordFromRequest(request, metadata.pw)
+        if (!passwordValid) {
+            return new Response('Unauthorized', {
+                status: 401,
+                headers: {
+                    'content-type': 'text/plain; charset=utf-8',
+                    'WWW-Authenticate': 'Bearer realm="note"',
+                },
+            })
+        }
+    }
+
+    return new Response(value, {
+        headers: {
+            'content-type': 'text/plain; charset=utf-8',
+            'cache-control': 'no-store',
+        },
+    })
 })
+
+router.get('/m/:path', async (request) => {
+    const lang = getI18n(request)
+    const { path } = request.params
+    const title = decodeURIComponent(path)
+
+    const cookie = Cookies.parse(request.headers.get('Cookie') || '')
+    const { value, metadata } = await queryNote(path)
+
+    if (metadata.pw) {
+        const valid = await checkAuth(cookie, path)
+        if (!valid) {
+            return returnPage('NeedPasswd', { lang, title })
+        }
+    }
+
+    return returnPage('Markdown', {
+        lang,
+        title,
+        content: value,
+        ext: { ...metadata, mode: 'md' },
+    })
+})
+
+router.get('/e/:path', editHandler)
+router.get('/:path', editHandler)
 
 router.post('/:path/auth', async request => {
     const { path } = request.params
@@ -80,8 +140,8 @@ router.post('/:path/auth', async request => {
                 return returnJSON(0, {
                     refresh: true,
                 }, {
-                    'Set-Cookie': Cookies.serialize('auth', token, {
-                        path: `/${path}`,
+                    'Set-Cookie': Cookies.serialize(`auth_${path}`, token, {
+                        path: '/',
                         expires: dayjs().add(7, 'day').toDate(),
                         httpOnly: true,
                     })
@@ -113,8 +173,8 @@ router.post('/:path/pw', async request => {
                 })
 
                 return returnJSON(0, null, {
-                    'Set-Cookie': Cookies.serialize('auth', '', {
-                        path: `/${path}`,
+                    'Set-Cookie': Cookies.serialize(`auth_${path}`, '', {
+                        path: '/',
                         expires: dayjs().subtract(100, 'day').toDate(),
                         httpOnly: true,
                     })

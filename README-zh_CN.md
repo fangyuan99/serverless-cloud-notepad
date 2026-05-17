@@ -26,6 +26,19 @@
 
 - 访问 `/随便什么` 查看/编辑指定名称的笔记
 
+- 通过 URL 前缀切换查看模式（同一篇笔记）：
+  - `/<名字>` 或 `/e/<名字>` — 编辑页（默认）
+  - `/m/<名字>` — 只读 Markdown 渲染页面
+  - `/r/<名字>` — 直接返回原始 `text/plain` 内容，可用于 API/命令行调用
+
+对于设置了密码的笔记，`/r/<名字>` 支持通过请求头或 query 传入密码：
+
+```bash
+curl https://note.example.com/r/abc                                       # 公开笔记
+curl -H "Authorization: Bearer <密码>" https://note.example.com/r/abc
+curl "https://note.example.com/r/abc?password=<密码>"
+```
+
 现在就试试！ [https://note.src.moe/example](https://note.src.moe/example)
 
 > [!NOTE]
