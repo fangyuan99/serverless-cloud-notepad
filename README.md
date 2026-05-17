@@ -1,7 +1,7 @@
 # ☁ Serverless Cloud Notepad
 
 [![cloudflare workers](https://badgen.net/badge/a/Cloudflare%20Workers/orange?icon=https%3A%2F%2Fworkers.cloudflare.com%2Fresources%2Flogo%2Flogo.svg&label=)](https://workers.cloudflare.com/)
-![example workflow](https://github.com/s0urcelab/serverless-cloud-notepad/actions/workflows/deploy.yml/badge.svg)
+![example workflow](https://github.com/fangyuan99/serverless-cloud-notepad/actions/workflows/deploy.yml/badge.svg)
 [![jsdelivr](https://img.shields.io/badge/jsdelivr-cdn-brightgreen)](https://www.jsdelivr.com/)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/dotzero/pad/blob/master/LICENSE)
 
