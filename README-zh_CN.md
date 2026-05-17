@@ -51,9 +51,11 @@ curl "https://note.example.com/r/abc?password=<密码>"
 ## 📦 私有化部署
 
 - 去 [这里](https://dash.cloudflare.com/profile/api-tokens) 申请你的 Cloudflare API令牌，选择 `编辑 Cloudflare Workers` 模板创建即可（~~一起白嫖到CF倒闭~~）
-- Fork 本项目，然后到设置 `Settings -> Secrets and variables -> Actions` 里添加如下3个Secret:
+- Fork 本项目，然后到设置 `Settings -> Secrets and variables -> Actions` 里添加如下4个Secret:
 ```bash
 CLOUDFLARE_API_TOKEN # 之前申请到的 Cloudflare API令牌
+
+CLOUDFLARE_ACCOUNT_ID # 你的 Cloudflare 账号 ID，在 https://dash.cloudflare.com/?to=/:account/workers-and-pages 右侧栏可以找到
 
 SCN_SALT # 随便填（安全用途）
 

@@ -51,9 +51,11 @@ Try it out! [https://note.src.moe/example](https://note.src.moe/example)
 ## 📦 Deployment
 
 - Create your Cloudflare API token in [here](https://dash.cloudflare.com/profile/api-tokens), choose `Cloudflare Workers Template` to complete create.
-- Fork this repository and add 3 Secret in `Settings -> Secrets and variables -> Actions`:
+- Fork this repository and add 4 Secrets in `Settings -> Secrets and variables -> Actions`:
 ```bash
 CLOUDFLARE_API_TOKEN # your Cloudflare API token
+
+CLOUDFLARE_ACCOUNT_ID # your Cloudflare Account ID, find it at https://dash.cloudflare.com/?to=/:account/workers-and-pages (right sidebar)
 
 SCN_SALT # whatever you like(for security reason)
 
